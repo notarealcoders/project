@@ -1,24 +1,14 @@
 import { NextResponse } from 'next/server';
-import { generateRoomId } from '@/lib/utils/roomUtils';
-import Room from '@/lib/mongodb/models/Room';
-import connectDB from '@/lib/mongodb/connection';
+import { RoomService } from '@/lib/mongodb/services/roomService';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    await connectDB();
-    const roomId = generateRoomId();
-    
-    const room = await Room.create({
-      roomId,
-      language: 'javascript',
-      code: '// Start coding here',
-    });
-
+    const room = await RoomService.create();
     return NextResponse.json({ roomId: room.roomId }, { status: 201 });
   } catch (error) {
     console.error('Failed to create room:', error);
     return NextResponse.json(
-      { error: 'Failed to create room' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -1,25 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface RoomContextType {
-  roomId: string;
-  language: string;
-  code: string;
-  setLanguage: (language: string) => void;
-  setCode: (code: string) => void;
-}
-
-const RoomContext = createContext<RoomContextType | null>(null);
-
-export function useRoom() {
-  const context = useContext(RoomContext);
-  if (!context) {
-    throw new Error('useRoom must be used within a RoomProvider');
-  }
-  return context;
-}
+import { RoomContext } from '@/lib/contexts/RoomContext';
 
 export default function RoomProvider({
   children,
@@ -43,7 +26,6 @@ export default function RoomProvider({
         setLanguage(room.language);
         setCode(room.code);
       } catch (error) {
-        console.error('Failed to fetch room:', error);
         router.push('/');
       }
     }

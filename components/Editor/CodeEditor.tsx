@@ -1,9 +1,9 @@
 'use client';
 
-import Editor from '@monaco-editor/react';
 import { languages } from '@/lib/constants/languages';
 import LanguageSelector from './LanguageSelector';
-import { useRoom } from '@/components/Room/RoomProvider';
+import MonacoEditor from './MonacoEditor';
+import { useRoom } from '@/lib/contexts/RoomContext';
 
 export default function CodeEditor() {
   const { language, code, setLanguage, setCode } = useRoom();
@@ -21,19 +21,10 @@ export default function CodeEditor() {
         </div>
       </div>
       <div className="flex-grow">
-        <Editor
-          height="100%"
-          defaultLanguage={language}
+        <MonacoEditor
           language={language}
           value={code}
-          onChange={(value) => setCode(value || '')}
-          theme="vs-dark"
-          options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            wordWrap: 'on',
-            automaticLayout: true,
-          }}
+          onChange={setCode}
         />
       </div>
     </div>

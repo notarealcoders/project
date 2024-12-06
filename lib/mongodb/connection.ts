@@ -18,7 +18,6 @@ let cached = global.mongoose || { conn: null, promise: null };
 async function connectDB() {
   try {
     if (cached.conn) {
-      console.log('Using cached MongoDB connection');
       return cached.conn;
     }
 
@@ -32,17 +31,13 @@ async function connectDB() {
 
       cached.promise = mongoose
         .connect(MONGODB_URI, opts)
-        .then((mongoose) => {
-          console.log('New MongoDB connection established');
-          return mongoose;
-        });
+        .then((mongoose) => mongoose);
     }
 
     cached.conn = await cached.promise;
     return cached.conn;
   } catch (e) {
     cached.promise = null;
-    console.error('MongoDB connection error:', e);
     throw new Error('Failed to connect to MongoDB');
   }
 }
