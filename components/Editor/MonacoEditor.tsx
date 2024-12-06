@@ -11,11 +11,17 @@ loader.config({
 
 interface MonacoEditorProps {
   language: string;
+  theme: string;
   value: string;
   onChange: (value: string) => void;
 }
 
-export default function MonacoEditor({ language, value, onChange }: MonacoEditorProps) {
+export default function MonacoEditor({
+  language,
+  theme,
+  value,
+  onChange,
+}: MonacoEditorProps) {
   const editorRef = useRef(null);
 
   useEffect(() => {
@@ -32,19 +38,29 @@ export default function MonacoEditor({ language, value, onChange }: MonacoEditor
       height="100%"
       defaultLanguage={language}
       language={language}
+      theme={theme}
       value={value}
       onChange={(value) => onChange(value || '')}
-      theme="vs-dark"
       options={{
         minimap: { enabled: false },
         fontSize: 14,
         wordWrap: 'on',
         automaticLayout: true,
+        lineNumbers: 'on',
+        roundedSelection: true,
+        scrollBeyondLastLine: false,
+        cursorBlinking: 'smooth',
+        cursorSmoothCaretAnimation: true,
+        smoothScrolling: true,
       }}
       onMount={(editor) => {
         editorRef.current = editor;
       }}
-      loading={<div className="text-center p-4">Loading editor...</div>}
+      loading={
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      }
     />
   );
 }

@@ -7,17 +7,15 @@ declare global {
   };
 }
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your MongoDB URI to .env.local');
-}
-
-const MONGODB_URI = process.env.MONGODB_URI;
+// Use an in-memory MongoDB for development if no URI is provided
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/codeshare';
 
 let cached = global.mongoose || { conn: null, promise: null };
 
 async function connectDB() {
   try {
     if (cached.conn) {
+      console.log('Using cached MongoDB connection');
       return cached.conn;
     }
 
@@ -29,14 +27,19 @@ async function connectDB() {
         socketTimeoutMS: 45000,
       };
 
+      console.log('Connecting to MongoDB...');
       cached.promise = mongoose
         .connect(MONGODB_URI, opts)
-        .then((mongoose) => mongoose);
+        .then((mongoose) => {
+          console.log('MongoDB connected successfully');
+          return mongoose;
+        });
     }
 
     cached.conn = await cached.promise;
     return cached.conn;
   } catch (e) {
+    console.error('MongoDB connection error:', e);
     cached.promise = null;
     throw new Error('Failed to connect to MongoDB');
   }
