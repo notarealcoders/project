@@ -1,72 +1,56 @@
-import Room from '../models/Room';
-import connectDB from '../connection';
-import { generateRoomId } from '@/lib/utils/roomUtils';
+import Room from "../models/Room";
+import connectDB from "../connection";
+import { generateRoomId } from "@/lib/utils/roomUtils";
+import { RoomData } from "../types";
 
 export class RoomService {
-  static async create() {
+  static async create(): Promise<RoomData> {
+    await connectDB();
+
     try {
-      await connectDB();
       const roomId = generateRoomId();
-      
       const room = await Room.create({
         roomId,
-        language: 'javascript',
-        code: '// Start coding here',
+        language: "javascript",
+        code: "// Start coding here",
       });
 
-      if (!room) {
-        throw new Error('Room creation failed');
-      }
-
-      return room;
+      return room.toObject();
     } catch (error) {
-      console.error('Error in RoomService.create:', error);
-      if (error instanceof Error) {
-        throw new Error(`Failed to create room: ${error.message}`);
-      }
-      throw new Error('Failed to create room: Unknown error');
+      console.error("Error in RoomService.create:", error);
+      throw error;
     }
   }
 
-  static async findByRoomId(roomId: string) {
+  static async findByRoomId(roomId: string): Promise<RoomData | null> {
+    await connectDB();
+
     try {
-      await connectDB();
       const room = await Room.findOne({ roomId });
-      
-      if (!room) {
-        throw new Error('Room not found');
-      }
-      
-      return room;
+      return room ? room.toObject() : null;
     } catch (error) {
-      console.error('Error in RoomService.findByRoomId:', error);
-      if (error instanceof Error) {
-        throw new Error(`Failed to find room: ${error.message}`);
-      }
-      throw new Error('Failed to find room: Unknown error');
+      console.error("Error in RoomService.findByRoomId:", error);
+      throw error;
     }
   }
 
-  static async update(roomId: string, data: Partial<{ language: string; code: string }>) {
+  static async update(
+    roomId: string,
+    data: Partial<Pick<RoomData, "language" | "code">>
+  ): Promise<RoomData | null> {
+    await connectDB();
+
     try {
-      await connectDB();
       const room = await Room.findOneAndUpdate(
         { roomId },
         { $set: data },
         { new: true }
       );
 
-      if (!room) {
-        throw new Error('Room not found');
-      }
-
-      return room;
+      return room ? room.toObject() : null;
     } catch (error) {
-      console.error('Error in RoomService.update:', error);
-      if (error instanceof Error) {
-        throw new Error(`Failed to update room: ${error.message}`);
-      }
-      throw new Error('Failed to update room: Unknown error');
+      console.error("Error in RoomService.update:", error);
+      throw error;
     }
   }
 }
