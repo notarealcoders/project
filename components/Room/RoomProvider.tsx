@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { RoomContext } from '@/lib/contexts/RoomContext';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { RoomContext } from "@/lib/contexts/RoomContext";
 
 export default function RoomProvider({
   children,
@@ -12,21 +12,21 @@ export default function RoomProvider({
   roomId: string;
 }) {
   const router = useRouter();
-  const [language, setLanguage] = useState('javascript');
-  const [code, setCode] = useState('// Start coding here');
+  const [language, setLanguage] = useState("javascript");
+  const [code, setCode] = useState("// Start coding here");
 
   useEffect(() => {
     async function fetchRoom() {
       try {
         const response = await fetch(`/api/rooms/${roomId}`);
         if (!response.ok) {
-          throw new Error('Room not found');
+          throw new Error("Room not found");
         }
         const room = await response.json();
         setLanguage(room.language);
         setCode(room.code);
       } catch (error) {
-        router.push('/');
+        router.push("/");
       }
     }
 
@@ -37,14 +37,14 @@ export default function RoomProvider({
     const saveRoom = async () => {
       try {
         await fetch(`/api/rooms/${roomId}`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ language, code }),
         });
       } catch (error) {
-        console.error('Failed to save room:', error);
+        console.error("Failed to save room:", error);
       }
     };
 
@@ -53,7 +53,9 @@ export default function RoomProvider({
   }, [roomId, language, code]);
 
   return (
-    <RoomContext.Provider value={{ roomId, language, code, setLanguage, setCode }}>
+    <RoomContext.Provider
+      value={{ roomId, language, code, setLanguage, setCode }}
+    >
       {children}
     </RoomContext.Provider>
   );
