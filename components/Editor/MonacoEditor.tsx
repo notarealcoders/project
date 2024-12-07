@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import Editor, { loader } from '@monaco-editor/react';
+import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useMonacoEditor } from '@/lib/editor/hooks/useMonacoEditor';
+import { defaultEditorOptions } from '@/lib/editor/config/editorConfig';
 
-loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs',
-  },
+const Editor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    </div>
+  ),
 });
 
 interface MonacoEditorProps {
@@ -14,6 +19,7 @@ interface MonacoEditorProps {
   theme: string;
   value: string;
   onChange: (value: string) => void;
+  roomId?: string;
 }
 
 export default function MonacoEditor({
@@ -21,17 +27,24 @@ export default function MonacoEditor({
   theme,
   value,
   onChange,
+  roomId,
 }: MonacoEditorProps) {
-  const editorRef = useRef(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const { editorRef, versionControl } = useMonacoEditor(roomId);
 
   useEffect(() => {
-    return () => {
-      if (editorRef.current) {
-        // @ts-ignore
-        editorRef.current.dispose();
-      }
-    };
+    setIsMounted(true);
   }, []);
+
+  const handleEditorChange = (value: string | undefined) => {
+    const newValue = value || '';
+    onChange(newValue);
+    versionControl?.saveVersion(newValue, language);
+  };
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <Editor
@@ -40,27 +53,11 @@ export default function MonacoEditor({
       language={language}
       theme={theme}
       value={value}
-      onChange={(value) => onChange(value || '')}
-      options={{
-        minimap: { enabled: false },
-        fontSize: 14,
-        wordWrap: 'on',
-        automaticLayout: true,
-        lineNumbers: 'on',
-        roundedSelection: true,
-        scrollBeyondLastLine: false,
-        cursorBlinking: 'smooth',
-        cursorSmoothCaretAnimation: true,
-        smoothScrolling: true,
-      }}
+      onChange={handleEditorChange}
+      options={defaultEditorOptions}
       onMount={(editor) => {
         editorRef.current = editor;
       }}
-      loading={
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        </div>
-      }
     />
   );
 }

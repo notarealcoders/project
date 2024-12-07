@@ -8,7 +8,7 @@ declare global {
 }
 
 // Use an in-memory MongoDB for development if no URI is provided
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/codeshare';
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://rohitsingh:t4UrxsCed3tJRqlq@cluster0.g4hvl.mongodb.net/sample_mflix?retryWrites=true&w=majority&appName=Cluster0";
 
 let cached = global.mongoose || { conn: null, promise: null };
 
