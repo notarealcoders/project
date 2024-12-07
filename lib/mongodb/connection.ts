@@ -1,47 +1,50 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 declare global {
   var mongoose: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
+    conn: mongoose.Connection | null;
+    promise: Promise<mongoose.Connection> | null;
   };
 }
 
 // Use an in-memory MongoDB for development if no URI is provided
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://rohitsingh:t4UrxsCed3tJRqlq@cluster0.g4hvl.mongodb.net/sample_mflix?retryWrites=true&w=majority&appName=Cluster0";
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://rohitsingh:t4UrxsCed3tJRqlq@cluster0.g4hvl.mongodb.net/sample_mflix?retryWrites=true&w=majority&appName=Cluster0";
 
-let cached = global.mongoose || { conn: null, promise: null };
+const cached = globalThis.mongoose;
 
 async function connectDB() {
   try {
     if (cached.conn) {
-      console.log('Using cached MongoDB connection');
+      console.log("Using cached MongoDB connection");
       return cached.conn;
     }
 
     if (!cached.promise) {
-      const opts = {
+      const opts: mongoose.ConnectOptions = {
         bufferCommands: false,
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
+        // You can add more options as needed
       };
 
-      console.log('Connecting to MongoDB...');
+      console.log("Connecting to MongoDB...");
       cached.promise = mongoose
         .connect(MONGODB_URI, opts)
-        .then((mongoose) => {
-          console.log('MongoDB connected successfully');
-          return mongoose;
+        .then((mongooseInstance) => {
+          console.log("MongoDB connected successfully");
+          return mongooseInstance.connection;
         });
     }
 
     cached.conn = await cached.promise;
     return cached.conn;
-  } catch (e) {
-    console.error('MongoDB connection error:', e);
+  } catch (e: any) {
+    console.error("MongoDB connection error:", e);
     cached.promise = null;
-    throw new Error('Failed to connect to MongoDB');
+    throw new Error(`Failed to connect to MongoDB: ${e.message}`);
   }
 }
 

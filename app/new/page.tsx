@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import CodeEditor from '@/components/Editor/CodeEditor';
-import TemporaryRoomProvider from '@/components/Room/TemporaryRoomProvider';
+import CodeEditor from "@/components/Editor/CodeEditor";
+import TemporaryRoomProvider from "@/components/Room/TemporaryRoomProvider";
 
 export default function NewSession() {
   return (
