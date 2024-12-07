@@ -1,32 +1,40 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRoom } from '@/lib/contexts/RoomContext';
-import MonacoEditor from './MonacoEditor';
-import EditorToolbar from './EditorToolbar';
-import { defaultTheme } from '@/lib/constants/editorThemes';
-import { Toaster } from 'react-hot-toast';
+import { useRoom } from "@/components/Room/RoomProvider";
+import MonacoEditor from "./MonacoEditor";
+import EditorToolbar from "./EditorToolbar";
+import { defaultTheme } from "@/lib/constants/editorThemes";
+import { Toaster } from "react-hot-toast";
+import { useState } from "react";
 
 export default function CodeEditor() {
-  const { language, code, setLanguage, setCode } = useRoom();
+  const { room, updateRoom } = useRoom();
   const [theme, setTheme] = useState(defaultTheme);
+
+  const handleLanguageChange = (language: string) => {
+    updateRoom({ language });
+  };
+
+  const handleCodeChange = (code: string) => {
+    updateRoom({ code });
+  };
 
   return (
     <div className="h-full flex flex-col">
       <EditorToolbar
-        language={language}
+        language={room?.language || "javascript"}
         theme={theme}
-        code={code}
-        onLanguageChange={setLanguage}
+        code={room?.code || ""}
+        onLanguageChange={handleLanguageChange}
         onThemeChange={setTheme}
-        onCodeChange={setCode}
+        onCodeChange={handleCodeChange}
       />
       <div className="flex-grow">
         <MonacoEditor
-          language={language}
+          language={room?.language || "javascript"}
           theme={theme}
-          value={code}
-          onChange={setCode}
+          value={room?.code || ""}
+          onChange={handleCodeChange}
         />
       </div>
       <Toaster />

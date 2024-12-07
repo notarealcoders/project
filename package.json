@@ -30,6 +30,7 @@
     "yjs": "^13.6.7",
     "y-websocket": "^1.5.0",
     "y-monaco": "^0.1.4",
-    "monaco-editor": "^0.39.0"
+    "monaco-editor": "^0.39.0",
+    "mongodb": "^5.8.0"
   }
 }
