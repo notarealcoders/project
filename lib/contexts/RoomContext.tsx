@@ -7,7 +7,7 @@ export interface RoomContextType {
   code: string;
   setLanguage: (language: string) => void;
   setCode: (code: string) => void;
-  roomId: string;
+  roomId?: string;
 }
 
 export const RoomContext = createContext<RoomContextType | null>(null);

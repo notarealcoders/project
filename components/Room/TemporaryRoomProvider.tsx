@@ -1,18 +1,14 @@
-'use client';
+"use client";
 
-import { RoomContext } from '@/lib/contexts/RoomContext';
-import { useTemporaryRoom } from '@/lib/hooks/useTemporaryRoom';
+import { RoomContext } from "@/lib/contexts/RoomContext";
+import { useTemporaryRoom } from "@/lib/hooks/useTemporaryRoom";
 
 export default function TemporaryRoomProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const room = useTemporaryRoom();
+  const roomId = useTemporaryRoom();
 
-  return (
-    <RoomContext.Provider value={room}>
-      {children}
-    </RoomContext.Provider>
-  );
+  return <RoomContext.Provider value={roomId}>{children}</RoomContext.Provider>;
 }
