@@ -1,38 +1,29 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { notify } from "@/lib/utils/notifications";
 import { RoomData } from "@/lib/mongodb/types";
+import { useDebounce } from "./useDebounce";
+import { useInterval } from "./useInterval";
+import { fetchRoom, updateRoom } from "@/lib/api/roomApi";
 
-const SYNC_INTERVAL = 5000; // 5 seconds
-const DEBOUNCE_DELAY = 1000; // 1 second
+const SYNC_INTERVAL = 5000;
+const DEBOUNCE_DELAY = 1000;
 
 export function useRoomSync(roomId: string) {
   const router = useRouter();
   const [room, setRoom] = useState<RoomData | null>(null);
   const pendingChangesRef = useRef<Partial<RoomData>>({});
   const lastSyncTimeRef = useRef<number>(Date.now());
-  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
 
-  // Fetch room data
-  const fetchRoom = useCallback(async () => {
+  const handleFetchRoom = useCallback(async () => {
     if (!isMountedRef.current) return;
 
     try {
-      const response = await fetch(`/api/rooms/${roomId}`);
-      if (!response.ok) {
-        if (response.status === 404) {
-          router.push("/");
-          notify.error("Room not found");
-          return;
-        }
-        throw new Error("Failed to fetch room");
-      }
-      const data = await response.json();
+      const data = await fetchRoom(roomId);
       setRoom((prev) => {
-        // Only update if data has changed
         if (JSON.stringify(prev) !== JSON.stringify(data)) {
           return data;
         }
@@ -41,94 +32,62 @@ export function useRoomSync(roomId: string) {
       lastSyncTimeRef.current = Date.now();
     } catch (error) {
       console.error("Error fetching room:", error);
+      if (error instanceof Error && error.message.includes("404")) {
+        router.push("/");
+        notify.error("Room not found");
+      }
     }
   }, [roomId, router]);
 
-  // Update room data
-  const updateRoom = useCallback(async () => {
+  const handleUpdateRoom = useCallback(async () => {
     if (
       !isMountedRef.current ||
       Object.keys(pendingChangesRef.current).length === 0
     )
       return;
 
+    let changes: Partial<RoomData> = {};
+
     try {
-      const changes = { ...pendingChangesRef.current };
-      pendingChangesRef.current = {}; // Clear pending changes before the request
+      changes = { ...pendingChangesRef.current };
+      pendingChangesRef.current = {};
 
-      const response = await fetch(`/api/rooms/${roomId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(changes),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update room");
-      }
-
-      const updatedRoom = await response.json();
+      const updatedRoom = await updateRoom(roomId, changes);
       setRoom(updatedRoom);
       lastSyncTimeRef.current = Date.now();
     } catch (error) {
       console.error("Error updating room:", error);
-      // Restore pending changes on error
-      pendingChangesRef.current = {
-        ...pendingChangesRef.current,
-        ...pendingChangesRef.current,
-      };
+      pendingChangesRef.current = { ...pendingChangesRef.current, ...changes };
     }
   }, [roomId]);
 
-  // Handle room updates with debouncing
+  const debouncedUpdate = useDebounce(handleUpdateRoom, DEBOUNCE_DELAY);
+
   const handleRoomUpdate = useCallback(
     (updates: Partial<RoomData>) => {
       pendingChangesRef.current = { ...pendingChangesRef.current, ...updates };
-
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-
-      updateTimeoutRef.current = setTimeout(() => {
-        updateRoom();
-      }, DEBOUNCE_DELAY);
+      debouncedUpdate();
     },
-    [updateRoom]
+    [debouncedUpdate]
   );
+
+  useInterval(() => {
+    const timeSinceLastSync = Date.now() - lastSyncTimeRef.current;
+    if (
+      timeSinceLastSync >= SYNC_INTERVAL &&
+      Object.keys(pendingChangesRef.current).length === 0
+    ) {
+      handleFetchRoom();
+    }
+  }, SYNC_INTERVAL);
 
   // Initial fetch
   useEffect(() => {
-    fetchRoom();
-  }, [fetchRoom]);
-
-  // Periodic sync with optimized interval
-  useEffect(() => {
-    const syncInterval = setInterval(() => {
-      const timeSinceLastSync = Date.now() - lastSyncTimeRef.current;
-      if (
-        timeSinceLastSync >= SYNC_INTERVAL &&
-        Object.keys(pendingChangesRef.current).length === 0
-      ) {
-        fetchRoom();
-      }
-    }, SYNC_INTERVAL);
-
-    return () => {
-      clearInterval(syncInterval);
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-    };
-  }, [fetchRoom]);
-
-  // Cleanup
-  useEffect(() => {
+    handleFetchRoom();
     return () => {
       isMountedRef.current = false;
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
     };
-  }, []);
+  }, [handleFetchRoom]);
 
   return {
     room,
