@@ -1,6 +1,6 @@
 "use client";
 
-import { useRoom } from "@/components/Room/RoomProvider";
+import { useRoom } from "@/lib/contexts/RoomContext";
 import MonacoEditor from "./MonacoEditor";
 import EditorToolbar from "./EditorToolbar";
 import { defaultTheme } from "@/lib/constants/editorThemes";

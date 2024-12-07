@@ -7,19 +7,34 @@ export class RoomService {
   static async create(): Promise<RoomData> {
     await connectDB();
     
-    try {
-      const roomId = generateRoomId();
-      const room = await Room.create({
-        roomId,
-        language: 'javascript',
-        code: '// Start coding here',
-      });
+    let attempts = 0;
+    const maxAttempts = 3;
 
-      return room.toObject();
-    } catch (error) {
-      console.error('Error in RoomService.create:', error);
-      throw error;
+    while (attempts < maxAttempts) {
+      try {
+        const roomId = generateRoomId();
+        const existingRoom = await Room.findOne({ roomId });
+        
+        if (!existingRoom) {
+          const room = await Room.create({
+            roomId,
+            language: 'javascript',
+            code: '// Start coding here',
+          });
+
+          return room.toObject();
+        }
+
+        attempts++;
+      } catch (error) {
+        console.error('Error in RoomService.create:', error);
+        if (attempts === maxAttempts - 1) {
+          throw new Error('Failed to create room after multiple attempts');
+        }
+      }
     }
+
+    throw new Error('Failed to generate unique room ID');
   }
 
   static async findByRoomId(roomId: string): Promise<RoomData | null> {

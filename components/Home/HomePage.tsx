@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import CustomRoomForm from '@/components/Room/CustomRoomForm';
+import { notify } from '@/lib/utils/notifications';
 
 export function HomePage() {
   const router = useRouter();
@@ -10,16 +11,21 @@ export function HomePage() {
     try {
       const response = await fetch('/api/rooms', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create room');
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create room');
       }
       
       const { roomId } = await response.json();
       router.push(`/room/${roomId}`);
     } catch (error) {
       console.error('Error creating room:', error);
+      notify.error('Failed to create room. Please try again.');
     }
   };
 

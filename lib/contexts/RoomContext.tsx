@@ -1,13 +1,12 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import { RoomData } from "@/lib/mongodb/types";
 
 export interface RoomContextType {
-  language: string;
-  code: string;
-  setLanguage: (language: string) => void;
-  setCode: (code: string) => void;
-  roomId?: string;
+  room: Partial<RoomData> | null;
+  updateRoom: (updates: Partial<RoomData>) => void;
+  isLoading: boolean;
 }
 
 export const RoomContext = createContext<RoomContextType | null>(null);

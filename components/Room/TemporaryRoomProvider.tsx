@@ -1,14 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { RoomContext } from "@/lib/contexts/RoomContext";
-import { useTemporaryRoom } from "@/lib/hooks/useTemporaryRoom";
+import { RoomData } from "@/lib/mongodb/types";
 
 export default function TemporaryRoomProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const roomId = useTemporaryRoom();
+  const [room, setRoom] = useState<Partial<RoomData>>({
+    language: "javascript",
+    code: "// Start coding here",
+  });
 
-  return <RoomContext.Provider value={roomId}>{children}</RoomContext.Provider>;
+  const updateRoom = (updates: Partial<RoomData>) => {
+    setRoom((prev) => ({ ...prev, ...updates }));
+  };
+
+  return (
+    <RoomContext.Provider
+      value={{
+        room,
+        updateRoom,
+        isLoading: false,
+      }}
+    >
+      {children}
+    </RoomContext.Provider>
+  );
 }

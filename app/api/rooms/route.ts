@@ -8,7 +8,7 @@ export async function POST() {
   } catch (error) {
     console.error('Failed to create room:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create room', message: (error as Error).message },
       { status: 500 }
     );
   }
