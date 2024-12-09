@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useMonacoEditor } from '@/lib/editor/hooks/useMonacoEditor';
 import { defaultEditorOptions } from '@/lib/editor/config/editorConfig';
+import { notify } from '@/lib/utils/notifications';
 
 const Editor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
@@ -31,15 +32,31 @@ export default function MonacoEditor({
 }: MonacoEditorProps) {
   const [isMounted, setIsMounted] = useState(false);
   const { editorRef, versionControl } = useMonacoEditor(roomId);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    return () => {
+      setIsMounted(false);
+    };
   }, []);
 
   const handleEditorChange = (value: string | undefined) => {
     const newValue = value || '';
-    onChange(newValue);
-    versionControl?.saveVersion(newValue, language);
+    if (isInitialized) {
+      onChange(newValue);
+      try {
+        versionControl?.saveVersion(newValue, language);
+      } catch (error) {
+        console.error('Error saving version:', error);
+        notify.error('Failed to save version history');
+      }
+    }
+  };
+
+  const handleEditorMount = (editor: any) => {
+    editorRef.current = editor;
+    setIsInitialized(true);
   };
 
   if (!isMounted) {
@@ -55,9 +72,12 @@ export default function MonacoEditor({
       value={value}
       onChange={handleEditorChange}
       options={defaultEditorOptions}
-      onMount={(editor) => {
-        editorRef.current = editor;
-      }}
+      onMount={handleEditorMount}
+      loading={
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      }
     />
   );
 }

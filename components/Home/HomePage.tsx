@@ -18,14 +18,18 @@ export function HomePage() {
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to create room');
+        throw new Error(error.details || error.message || 'Failed to create room');
       }
       
       const { roomId } = await response.json();
+      if (!roomId) {
+        throw new Error('No room ID received');
+      }
+      
       router.push(`/room/${roomId}`);
     } catch (error) {
       console.error('Error creating room:', error);
-      notify.error('Failed to create room. Please try again.');
+      notify.error((error as Error).message || 'Failed to create room. Please try again.');
     }
   };
 

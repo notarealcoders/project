@@ -1,11 +1,16 @@
 import { RoomData } from "@/lib/mongodb/types";
 
-export async function fetchRoom(roomId: string): Promise<RoomData> {
-  const response = await fetch(`/api/rooms/${roomId}`);
+const handleResponse = async (response: Response) => {
   if (!response.ok) {
-    throw new Error(`Failed to fetch room: ${response.statusText}`);
+    const error = await response.json();
+    throw new Error(error.message || response.statusText);
   }
   return response.json();
+};
+
+export async function fetchRoom(roomId: string): Promise<RoomData> {
+  const response = await fetch(`/api/rooms/${roomId}`);
+  return handleResponse(response);
 }
 
 export async function updateRoom(
@@ -18,9 +23,14 @@ export async function updateRoom(
     body: JSON.stringify(updates),
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to update room: ${response.statusText}`);
-  }
+  return handleResponse(response);
+}
 
-  return response.json();
+export async function createRoom(): Promise<{ roomId: string }> {
+  const response = await fetch("/api/rooms", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  return handleResponse(response);
 }

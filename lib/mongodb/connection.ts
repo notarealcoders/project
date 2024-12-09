@@ -13,10 +13,6 @@ if (!global.mongoose) {
 }
 
 async function connectDB() {
-  if (!MONGODB_URI) {
-    throw new Error("MONGODB_URI is not defined in environment variables");
-  }
-
   try {
     if (global.mongoose.conn) {
       return global.mongoose.conn;
@@ -31,7 +27,6 @@ async function connectDB() {
       global.mongoose.promise = mongoose
         .connect(MONGODB_URI, opts)
         .then((mongoose) => {
-          console.log("Connected to MongoDB");
           return mongoose.connection;
         });
     }
@@ -41,7 +36,7 @@ async function connectDB() {
   } catch (error) {
     console.error("MongoDB connection error:", error);
     global.mongoose.promise = null;
-    throw error;
+    throw new Error("Failed to connect to MongoDB");
   }
 }
 

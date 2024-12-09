@@ -10,13 +10,17 @@ import { fetchRoom, updateRoom } from "@/lib/api/roomApi";
 
 const SYNC_INTERVAL = 5000;
 const DEBOUNCE_DELAY = 1000;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 export function useRoomSync(roomId: string) {
   const router = useRouter();
   const [room, setRoom] = useState<RoomData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const pendingChangesRef = useRef<Partial<RoomData>>({});
   const lastSyncTimeRef = useRef<number>(Date.now());
   const isMountedRef = useRef(true);
+  const retryCountRef = useRef(0);
 
   const handleFetchRoom = useCallback(async () => {
     if (!isMountedRef.current) return;
@@ -30,11 +34,19 @@ export function useRoomSync(roomId: string) {
         return prev;
       });
       lastSyncTimeRef.current = Date.now();
+      retryCountRef.current = 0;
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching room:", error);
       if (error instanceof Error && error.message.includes("404")) {
         router.push("/");
         notify.error("Room not found");
+      } else if (retryCountRef.current < MAX_RETRIES) {
+        retryCountRef.current++;
+        setTimeout(handleFetchRoom, RETRY_DELAY);
+      } else {
+        notify.error("Failed to connect to room");
+        setIsLoading(false);
       }
     }
   }, [roomId, router]);
@@ -58,6 +70,7 @@ export function useRoomSync(roomId: string) {
     } catch (error) {
       console.error("Error updating room:", error);
       pendingChangesRef.current = { ...pendingChangesRef.current, ...changes };
+      notify.error("Failed to save changes");
     }
   }, [roomId]);
 
@@ -81,7 +94,6 @@ export function useRoomSync(roomId: string) {
     }
   }, SYNC_INTERVAL);
 
-  // Initial fetch
   useEffect(() => {
     handleFetchRoom();
     return () => {
@@ -92,6 +104,6 @@ export function useRoomSync(roomId: string) {
   return {
     room,
     updateRoom: handleRoomUpdate,
-    isLoading: !room,
+    isLoading,
   };
 }
