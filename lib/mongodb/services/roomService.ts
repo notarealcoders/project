@@ -1,75 +1,55 @@
-import Room from '../models/Room';
-import connectDB from '../connection';
-import { generateRoomId } from '@/lib/utils/roomUtils';
 import { RoomData } from '../types';
+import { roomRepository } from '../repositories/roomRepository';
+import { generateRoomId } from '@/lib/utils/roomUtils';
+import { DatabaseError, RoomError } from '../core/errors';
 
 export class RoomService {
   static async create(): Promise<RoomData> {
-    try {
-      await connectDB();
-      
-      let attempts = 0;
-      const maxAttempts = 3;
+    let attempts = 0;
+    const maxAttempts = 3;
+    let lastError;
 
-      while (attempts < maxAttempts) {
-        try {
-          const roomId = generateRoomId();
-          const existingRoom = await Room.findOne({ roomId });
-          
-          if (!existingRoom) {
-            const room = await Room.create({
-              roomId,
-              language: 'javascript',
-              code: '// Start coding here',
-            });
-
-            return room.toObject();
-          }
-
-          attempts++;
-        } catch (error) {
-          console.error('Error creating room:', error);
-          attempts++;
-          if (attempts === maxAttempts) {
-            throw new Error('Failed to create room after multiple attempts');
-          }
+    while (attempts < maxAttempts) {
+      try {
+        const roomId = generateRoomId();
+        const existingRoom = await roomRepository.findByRoomId(roomId);
+        
+        if (!existingRoom) {
+          return await roomRepository.create({
+            roomId,
+            language: 'javascript',
+            code: '// Start coding here',
+          });
         }
-      }
 
-      throw new Error('Failed to generate unique room ID');
-    } catch (error) {
-      console.error('Error in RoomService.create:', error);
-      throw error;
+        attempts++;
+      } catch (error) {
+        lastError = error;
+        console.error(`Attempt ${attempts + 1} failed:`, error);
+        attempts++;
+        
+        if (attempts === maxAttempts) {
+          throw new DatabaseError(
+            'Failed to create room after multiple attempts',
+            error instanceof Error ? error.message : 'Unknown error'
+          );
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
+
+    throw lastError || new RoomError('Failed to generate unique room ID');
   }
 
   static async findByRoomId(roomId: string): Promise<RoomData | null> {
-    try {
-      await connectDB();
-      const room = await Room.findOne({ roomId });
-      return room ? room.toObject() : null;
-    } catch (error) {
-      console.error('Error in RoomService.findByRoomId:', error);
-      throw error;
-    }
+    return roomRepository.findByRoomId(roomId);
   }
 
   static async update(
-    roomId: string, 
+    roomId: string,
     data: Partial<Pick<RoomData, 'language' | 'code'>>
   ): Promise<RoomData | null> {
-    try {
-      await connectDB();
-      const room = await Room.findOneAndUpdate(
-        { roomId },
-        { $set: data },
-        { new: true }
-      );
-      
-      return room ? room.toObject() : null;
-    } catch (error) {
-      console.error('Error in RoomService.update:', error);
-      throw error;
-    }
+    return roomRepository.update(roomId, data);
   }
 }

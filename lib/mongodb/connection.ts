@@ -24,9 +24,13 @@ async function connectDB() {
         bufferCommands: false,
       };
 
+      // Disable automatic indexing in production
+      mongoose.set('autoIndex', process.env.NODE_ENV !== 'production');
+      
       global.mongoose.promise = mongoose
-        .connect(MONGODB_URI, opts)
+        .connect(MONGODB_URI!, opts)
         .then((mongoose) => {
+          console.log('MongoDB connected successfully');
           return mongoose.connection;
         });
     }
@@ -36,7 +40,9 @@ async function connectDB() {
   } catch (error) {
     console.error("MongoDB connection error:", error);
     global.mongoose.promise = null;
-    throw new Error("Failed to connect to MongoDB");
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to connect to MongoDB"
+    );
   }
 }
 
